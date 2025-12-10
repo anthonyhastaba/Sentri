@@ -1,0 +1,168 @@
+import { useTickets } from "@/hooks/use-tickets";
+import { Sidebar } from "@/components/Sidebar";
+import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import { Link } from "wouter";
+import { Loader2, AlertCircle, ArrowRight, Search, Activity, ShieldCheck, Clock } from "lucide-react";
+import { motion } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
+
+export default function Dashboard() {
+  const { data: tickets, isLoading, error } = useTickets();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
+        <Loader2 className="w-12 h-12 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background text-destructive">
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-16 h-16 mx-auto" />
+          <h2 className="text-2xl font-bold">Failed to load dashboard</h2>
+          <p className="text-muted-foreground">Please check your connection and try again.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const activeTickets = tickets?.filter(t => t.status !== 'resolved') || [];
+  const criticalCount = tickets?.filter(t => t.priority?.toLowerCase() === 'critical').length || 0;
+  const resolvedCount = tickets?.filter(t => t.status === 'resolved').length || 0;
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex">
+      <Sidebar />
+      
+      <main className="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto">
+        <header className="mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-glow">Incident Dashboard</h1>
+              <p className="text-muted-foreground mt-1">Overview of security alerts and support tickets</p>
+            </div>
+            <Link href="/tickets/new" className="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-6 py-2 shadow-primary/25">
+              New Incident
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MetricCard 
+              title="Active Incidents" 
+              value={activeTickets.length} 
+              icon={Activity}
+              trend="Current Load"
+              color="text-blue-400"
+            />
+            <MetricCard 
+              title="Critical Threats" 
+              value={criticalCount} 
+              icon={AlertCircle}
+              trend="Requires Attention"
+              color="text-red-500"
+              borderColor="border-red-500/20"
+            />
+            <MetricCard 
+              title="Resolved (Today)" 
+              value={resolvedCount} 
+              icon={ShieldCheck}
+              trend="Target: 10+"
+              color="text-green-400"
+            />
+          </div>
+        </header>
+
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              Recent Tickets
+              <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{tickets?.length}</span>
+            </h2>
+            <div className="relative w-64 hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input 
+                placeholder="Search tickets..." 
+                className="w-full bg-secondary/50 border border-border rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+
+          <div className="glass-panel rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-secondary/50 text-muted-foreground uppercase text-xs font-semibold">
+                  <tr>
+                    <th className="px-6 py-4">ID</th>
+                    <th className="px-6 py-4">Title</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4">Priority</th>
+                    <th className="px-6 py-4">Category</th>
+                    <th className="px-6 py-4 text-right">Created</th>
+                    <th className="px-6 py-4"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {tickets?.map((ticket) => (
+                    <motion.tr 
+                      key={ticket.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="hover:bg-primary/5 transition-colors group"
+                    >
+                      <td className="px-6 py-4 font-mono text-muted-foreground">#{ticket.id}</td>
+                      <td className="px-6 py-4 font-medium text-foreground">
+                        {ticket.title}
+                        <div className="md:hidden mt-1 text-xs text-muted-foreground truncate max-w-[200px]">{ticket.content}</div>
+                      </td>
+                      <td className="px-6 py-4"><StatusBadge status={ticket.status} /></td>
+                      <td className="px-6 py-4"><PriorityBadge priority={ticket.priority} /></td>
+                      <td className="px-6 py-4 text-muted-foreground">{ticket.category || "—"}</td>
+                      <td className="px-6 py-4 text-right text-muted-foreground whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          <Clock className="w-3 h-3" />
+                          {ticket.createdAt ? formatDistanceToNow(new Date(ticket.createdAt), { addSuffix: true }) : 'Just now'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Link href={`/tickets/${ticket.id}`} className="inline-flex items-center justify-center p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </td>
+                    </motion.tr>
+                  ))}
+                  {tickets?.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                        No tickets found. <Link href="/tickets/new" className="text-primary hover:underline">Create one</Link> to get started.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function MetricCard({ title, value, icon: Icon, trend, color, borderColor = "border-border/50" }: any) {
+  return (
+    <div className={`glass-panel p-6 rounded-xl border ${borderColor} relative overflow-hidden group`}>
+      <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}>
+        <Icon className="w-16 h-16" />
+      </div>
+      <div className="relative z-10">
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <h3 className={`text-3xl font-bold mt-2 ${color} tracking-tight`}>{value}</h3>
+        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+          <span className="bg-secondary px-1.5 py-0.5 rounded">{trend}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
