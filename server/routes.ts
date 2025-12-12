@@ -144,17 +144,47 @@ export async function registerRoutes(
 
   // Seed data
   if ((await storage.getTickets()).length === 0) {
-    await storage.createTicket({
-      title: "Cannot login to VPN",
-      content: "I keep getting 'Authentication Failed' when trying to connect to the corporate VPN. I reset my password yesterday.",
-      status: "new"
-    });
-    
-    await storage.createTicket({
-      title: "Suspicious Email",
-      content: "I received an email from 'IT Support' asking for my credentials. It looks fishy. The sender is support@gmaill.com.",
-      status: "new"
-    });
+    const seedTickets = [
+      {
+        title: "Active Directory Account Lockout",
+        content: "User 'jdoe' reports they are unable to log in to their workstation. Error message indicates the account is locked. This is the third time this week for this user.",
+        status: "new"
+      },
+      {
+        title: "Suspicious Email - Possible Phishing",
+        content: "Received a report of an email appearing to be from 'CEO Payroll' asking employees to verify their bank details via a non-corporate link: 'http://corp-payroll-verify.net'.",
+        status: "new"
+      },
+      {
+        title: "Laptop Cannot Connect to Eduroam",
+        content: "Student laptop (macOS) fails to authenticate with Eduroam. Works on guest network but Eduroam stuck on 'Connecting...'. Certificate was recently updated.",
+        status: "new"
+      },
+      {
+        title: "Zoom Rooms Display Not Responding",
+        content: "Conference Room 4B: The main display is black and the tablet controller shows 'Unable to connect to Zoom Room'. Power cycle did not resolve.",
+        status: "new"
+      },
+      {
+        title: "Possible Malware Detected on Managed Device",
+        content: "EDR alert triggered on 'WKSTN-882'. Multiple unauthorized outbound connections detected to known malicious IP addresses. Unusual process activity in /tmp.",
+        status: "new"
+      },
+      {
+        title: "MFA Reset Request",
+        content: "Employee lost their mobile device while traveling and needs their Okta MFA tokens reset to set up a new device. Verified identity via manager.",
+        status: "new"
+      },
+      {
+        title: "VPN Authentication Failure",
+        content: "Several users in the EMEA region reporting 'Gateway Timeout' when attempting to connect to the London VPN concentrator. Possible ISP routing issue.",
+        status: "new"
+      }
+    ];
+
+    for (const ticket of seedTickets) {
+      await storage.createTicket(ticket);
+    }
   }
 
   return httpServer;

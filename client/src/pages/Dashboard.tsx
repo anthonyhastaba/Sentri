@@ -29,9 +29,20 @@ export default function Dashboard() {
     );
   }
 
-  const activeTickets = tickets?.filter(t => t.status !== 'resolved') || [];
-  const criticalCount = tickets?.filter(t => t.priority?.toLowerCase() === 'critical').length || 0;
-  const resolvedCount = tickets?.filter(t => t.status === 'resolved').length || 0;
+  const activeTickets = tickets?.filter(t => t.status !== 'resolved' && t.status !== 'closed') || [];
+  const criticalCount = tickets?.filter(t => t.priority?.toLowerCase() === 'critical' && t.status !== 'resolved').length || 0;
+  
+  // For "Resolved Today", we filter by status 'resolved' and check if createdAt is today
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+  };
+  
+  const resolvedTodayCount = tickets?.filter(t => 
+    t.status === 'resolved' && t.createdAt && isToday(new Date(t.createdAt))
+  ).length || 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -67,7 +78,7 @@ export default function Dashboard() {
             />
             <MetricCard 
               title="Resolved (Today)" 
-              value={resolvedCount} 
+              value={resolvedTodayCount} 
               icon={ShieldCheck}
               trend="Target: 10+"
               color="text-green-400"

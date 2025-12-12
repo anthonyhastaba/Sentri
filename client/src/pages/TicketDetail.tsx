@@ -39,6 +39,15 @@ export default function TicketDetail() {
     }
   };
 
+  const handleResolve = () => {
+    update({ id, status: "resolved" }, {
+      onSuccess: () => {
+        // Option: stay on page or go back
+        // setLocation("/");
+      }
+    });
+  };
+
   const handleSaveResponse = () => {
     update({ id, draftResponse });
   };
@@ -55,6 +64,16 @@ export default function TicketDetail() {
               <ArrowLeft className="w-4 h-4" /> Back to Dashboard
             </Link>
             <div className="flex items-center gap-2">
+              {ticket.status !== 'resolved' && (
+                <button
+                  onClick={handleResolve}
+                  disabled={isUpdating}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-md shadow-lg shadow-green-900/20 hover:bg-green-500 transition-all disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Resolve Ticket
+                </button>
+              )}
               <button 
                 onClick={handleDelete}
                 disabled={isDeleting}
@@ -120,6 +139,12 @@ export default function TicketDetail() {
                     <h3 className="text-lg font-semibold flex items-center gap-2 text-primary">
                       <Sparkles className="w-5 h-5" /> AI Triage Analysis
                     </h3>
+                    {ticket.category && (
+                      <div className="flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full border border-primary/20 animate-in fade-in zoom-in duration-500">
+                        <Clock className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-xs font-bold text-primary">~12m Time Saved</span>
+                      </div>
+                    )}
                     {!ticket.category ? (
                       <button
                         onClick={() => analyze(ticket.id)}
