@@ -18,8 +18,8 @@ export function Sidebar() {
           <ShieldAlert className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="font-bold text-lg tracking-tight">Sentri</h1>
-          <p className="text-xs text-muted-foreground">Incident Response</p>
+          <h1 className="font-bold text-xl tracking-tighter text-primary">SENTRI</h1>
+          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">Security Operations</p>
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-1">

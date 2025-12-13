@@ -52,8 +52,8 @@ export default function Dashboard() {
         <header className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-glow">Incident Dashboard</h1>
-              <p className="text-muted-foreground mt-1">Overview of security alerts and support tickets</p>
+              <h1 className="text-3xl font-bold tracking-tight text-glow uppercase">Sentri <span className="text-primary/50 text-xl font-light">Command Center</span></h1>
+              <p className="text-muted-foreground mt-1">Real-time security incident triage & automated response</p>
             </div>
             <Link href="/tickets/new" className="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-6 py-2 shadow-primary/25">
               New Incident
