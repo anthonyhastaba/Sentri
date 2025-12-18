@@ -72,6 +72,21 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    bulkAnalyze: {
+      method: 'POST' as const,
+      path: '/api/tickets/bulk-analyze' as const,
+      input: z.object({
+        ids: z.array(z.number()),
+      }),
+      responses: {
+        200: z.object({
+          count: z.number(),
+          totalTimeSaved: z.number(),
+          results: z.array(z.custom<typeof tickets.$inferSelect>()),
+        }),
+        400: errorSchemas.validation,
+      },
+    },
   },
 };
 

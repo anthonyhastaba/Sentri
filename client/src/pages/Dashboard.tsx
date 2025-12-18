@@ -2,12 +2,20 @@ import { useTickets } from "@/hooks/use-tickets";
 import { Sidebar } from "@/components/Sidebar";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { Link } from "wouter";
-import { Loader2, AlertCircle, ArrowRight, Search, Activity, ShieldCheck, Clock } from "lucide-react";
-import { motion } from "framer-motion";
+import { Loader2, AlertCircle, ArrowRight, Search, Activity, ShieldCheck, Clock, CheckSquare, Square, Zap, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
+import { useState } from "react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { data: tickets, isLoading, error } = useTickets();
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isBulkAnalyzing, setIsBulkAnalyzing] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ count: number; totalTimeSaved: number } | null>(null);
+  const { toast } = useToast();
 
   if (isLoading) {
     return (
@@ -43,6 +51,47 @@ export default function Dashboard() {
   const resolvedTodayCount = tickets?.filter(t => 
     t.status === 'resolved' && t.createdAt && isToday(new Date(t.createdAt))
   ).length || 0;
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === tickets?.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(tickets?.map(t => t.id) || []);
+    }
+  };
+
+  const handleBulkAnalyze = async () => {
+    if (selectedIds.length === 0) return;
+    
+    setIsBulkAnalyzing(true);
+    setBulkResult(null);
+    try {
+      const res = await apiRequest("POST", "/api/tickets/bulk-analyze", { ids: selectedIds });
+      const data = await res.json();
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      setBulkResult({ count: data.count, totalTimeSaved: data.totalTimeSaved });
+      setSelectedIds([]);
+      toast({
+        title: "Bulk Triage Complete",
+        description: `Successfully analyzed ${data.count} tickets.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Bulk Triage Failed",
+        description: "An error occurred during bulk analysis.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkAnalyzing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -87,6 +136,71 @@ export default function Dashboard() {
         </header>
 
         <section className="space-y-4">
+          <AnimatePresence>
+            {selectedIds.length > 0 && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="glass-panel p-4 rounded-xl border-primary/30 bg-primary/5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                      <CheckSquare className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold">{selectedIds.length} Tickets Selected</p>
+                      <p className="text-xs text-muted-foreground">Perform automated triage on all selected items</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleBulkAnalyze}
+                    disabled={isBulkAnalyzing}
+                    className="inline-flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground font-bold rounded-md shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
+                  >
+                    {isBulkAnalyzing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Zap className="w-4 h-4" />
+                    )}
+                    Run Bulk Analysis
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {bulkResult && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="glass-panel p-6 rounded-xl border-green-500/30 bg-green-500/5 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold">Bulk Triage Summary</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Successfully processed <span className="text-foreground font-bold">{bulkResult.count}</span> tickets.
+                      Total efficiency gain: <span className="text-green-500 font-bold">~{bulkResult.totalTimeSaved} minutes</span> saved.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setBulkResult(null)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Dismiss
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               Recent Tickets
@@ -106,6 +220,15 @@ export default function Dashboard() {
               <table className="w-full text-sm text-left">
                 <thead className="bg-secondary/50 text-muted-foreground uppercase text-xs font-semibold">
                   <tr>
+                    <th className="px-6 py-4 w-10">
+                      <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary transition-colors">
+                        {selectedIds.length === tickets?.length && tickets?.length > 0 ? (
+                          <CheckSquare className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
                     <th className="px-6 py-4">ID</th>
                     <th className="px-6 py-4">Title</th>
                     <th className="px-6 py-4">Status</th>
@@ -121,8 +244,23 @@ export default function Dashboard() {
                       key={ticket.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="hover:bg-primary/5 transition-colors group"
+                      className={cn(
+                        "hover:bg-primary/5 transition-colors group",
+                        selectedIds.includes(ticket.id) && "bg-primary/5"
+                      )}
                     >
+                      <td className="px-6 py-4">
+                        <button 
+                          onClick={() => toggleSelect(ticket.id)}
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          {selectedIds.includes(ticket.id) ? (
+                            <CheckSquare className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Square className="w-4 h-4 opacity-50 group-hover:opacity-100" />
+                          )}
+                        </button>
+                      </td>
                       <td className="px-6 py-4 font-mono text-muted-foreground">#{ticket.id}</td>
                       <td className="px-6 py-4 font-medium text-foreground">
                         {ticket.title}

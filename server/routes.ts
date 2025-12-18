@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import OpenAI from "openai";
+import { batchProcess } from "./replit_integrations/batch";
 
 // Initialize OpenAI client using the environment variables from the integration
 const openai = new OpenAI({
@@ -139,6 +140,87 @@ export async function registerRoutes(
     } catch (error) {
       console.error("AI Analysis failed:", error);
       res.status(500).json({ message: "Failed to analyze ticket" });
+    }
+  });
+
+  app.post(api.tickets.bulkAnalyze.path, async (req, res) => {
+    try {
+      const { ids } = api.tickets.bulkAnalyze.input.parse(req.body);
+      
+      const results = await batchProcess(
+        ids,
+        async (id) => {
+          const ticket = await storage.getTicket(id);
+          if (!ticket) return null;
+
+          const prompt = `
+            Analyze the following IT support ticket:
+            Title: ${ticket.title}
+            Content: ${ticket.content}
+
+            Provide the following in JSON format:
+            1. category (one of: Account Access, Malware/Security, Hardware, Network, Software, Other)
+            2. priority (one of: Low, Medium, High, Critical)
+            3. nextSteps (bullet points of ITIL/Security best practices)
+            4. draftResponse (professional response to the user)
+          `;
+
+          const response = await openai.chat.completions.create({
+            model: "gpt-5.1",
+            messages: [
+              { role: "system", content: "You are an expert IT security analyst and help desk specialist. Output valid JSON." },
+              { role: "user", content: prompt }
+            ],
+            response_format: { type: "json_object" },
+          });
+
+          const content = response.choices[0].message.content;
+          if (!content) throw new Error("No response from AI");
+
+          const analysis = JSON.parse(content);
+          
+          let nextStepsStr = Array.isArray(analysis.nextSteps) 
+            ? analysis.nextSteps.join('\n') 
+            : analysis.nextSteps;
+
+          return await storage.updateTicket(id, {
+            category: analysis.category,
+            priority: analysis.priority,
+            nextSteps: nextStepsStr,
+            draftResponse: analysis.draftResponse,
+            status: "in_progress"
+          });
+        },
+        { concurrency: 3 }
+      );
+
+      const successfulResults = results.filter((r): r is NonNullable<typeof r> => r !== null);
+      
+      const calculateTimeSaved = (ticket: any) => {
+        if (!ticket.priority) return 0;
+        let base = 0;
+        const p = ticket.priority.toLowerCase();
+        if (p === 'critical') base = 18;
+        else if (p === 'high') base = 15;
+        else if (p === 'medium') base = 10;
+        else if (p === 'low') base = 6;
+        if (ticket.category === 'Malware/Security') base += 3;
+        return base;
+      };
+
+      const totalTimeSaved = successfulResults.reduce((acc, r) => acc + calculateTimeSaved(r), 0);
+
+      res.json({
+        count: successfulResults.length,
+        totalTimeSaved,
+        results: successfulResults
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid IDs" });
+      }
+      console.error("Bulk Analysis failed:", err);
+      res.status(500).json({ message: "Bulk analysis failed" });
     }
   });
 
