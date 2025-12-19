@@ -2,19 +2,22 @@ import { useTickets } from "@/hooks/use-tickets";
 import { Sidebar } from "@/components/Sidebar";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { Link } from "wouter";
-import { Loader2, AlertCircle, ArrowRight, Search, Activity, ShieldCheck, Clock, CheckSquare, Square, Zap, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertCircle, ArrowRight, Search, Activity, ShieldCheck, Clock, CheckSquare, Square, Zap, CheckCircle2, FileText, Download, Copy, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const { data: tickets, isLoading, error } = useTickets();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isBulkAnalyzing, setIsBulkAnalyzing] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ count: number; totalTimeSaved: number } | null>(null);
+  const [showReport, setShowReport] = useState(false);
   const { toast } = useToast();
 
   if (isLoading) {
@@ -93,6 +96,87 @@ export default function Dashboard() {
     }
   };
 
+  const generateReport = () => {
+    if (!tickets) return "";
+
+    const today = new Date();
+    const triagedToday = tickets.filter(t => t.createdAt && isToday(new Date(t.createdAt)));
+    const resolved = triagedToday.filter(t => t.status === 'resolved');
+    const active = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed');
+    const critical = active.filter(t => t.priority?.toLowerCase() === 'critical');
+    
+    const categoryBreakdown = tickets.reduce((acc: Record<string, number>, t) => {
+      if (t.category) {
+        acc[t.category] = (acc[t.category] || 0) + 1;
+      }
+      return acc;
+    }, {});
+
+    const calculateTimeSaved = (ticket: any) => {
+      if (!ticket.priority) return 0;
+      let base = 0;
+      const p = ticket.priority.toLowerCase();
+      if (p === 'critical') base = 18;
+      else if (p === 'high') base = 15;
+      else if (p === 'medium') base = 10;
+      else if (p === 'low') base = 6;
+      if (ticket.category === 'Malware/Security') base += 3;
+      return base;
+    };
+
+    const totalTimeSaved = tickets.reduce((acc, t) => acc + calculateTimeSaved(t), 0);
+    const highPriorityAlerts = active.filter(t => 
+      t.priority?.toLowerCase() === 'critical' || t.priority?.toLowerCase() === 'high'
+    );
+
+    let report = `SENTRI INCIDENT SUMMARY - ${format(today, 'PPPP')}\n`;
+    report += `====================================================\n\n`;
+    report += `EXECUTIVE SUMMARY\n`;
+    report += `-----------------\n`;
+    report += `Total Tickets Triaged Today: ${triagedToday.length}\n`;
+    report += `Resolved Today:              ${resolved.length}\n`;
+    report += `Current Active Incidents:    ${active.length}\n`;
+    report += `Critical Threats:            ${critical.length}\n`;
+    report += `Total AI Time Saved:         ~${totalTimeSaved} minutes\n\n`;
+
+    report += `CATEGORY BREAKDOWN\n`;
+    report += `------------------\n`;
+    Object.entries(categoryBreakdown).forEach(([cat, count]) => {
+      report += `${cat.padEnd(20)}: ${count}\n`;
+    });
+    if (Object.keys(categoryBreakdown).length === 0) report += "No categories assigned yet.\n";
+    report += `\n`;
+
+    report += `HIGH PRIORITY ALERTS REQUIRING ATTENTION\n`;
+    report += `----------------------------------------\n`;
+    highPriorityAlerts.forEach(t => {
+      report += `[${t.priority?.toUpperCase()}] #${t.id}: ${t.title}\n`;
+    });
+    if (highPriorityAlerts.length === 0) report += "No high priority alerts pending.\n";
+
+    return report;
+  };
+
+  const reportText = generateReport();
+
+  const handleDownloadReport = () => {
+    const element = document.createElement("a");
+    const file = new Blob([reportText], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `sentri-report-${format(new Date(), 'yyyy-MM-dd')}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const handleCopyReport = () => {
+    navigator.clipboard.writeText(reportText);
+    toast({
+      title: "Report Copied",
+      description: "Incident summary has been copied to clipboard.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       <Sidebar />
@@ -104,9 +188,18 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold tracking-tight text-glow uppercase">Sentri <span className="text-primary/50 text-xl font-light">Command Center</span></h1>
               <p className="text-muted-foreground mt-1">Real-time security incident triage & automated response</p>
             </div>
-            <Link href="/tickets/new" className="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-6 py-2 shadow-primary/25">
-              New Incident
-            </Link>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setShowReport(true)}
+                className="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-border bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Generate Report
+              </button>
+              <Link href="/tickets/new" className="hidden md:inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-6 py-2 shadow-primary/25">
+                New Incident
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -295,6 +388,45 @@ export default function Dashboard() {
           </div>
         </section>
       </main>
+
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent className="max-w-2xl bg-card border-border shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Daily Incident Summary
+            </DialogTitle>
+            <DialogDescription>
+              Professional report summarizing security activity and response efficiency.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            <pre className="bg-secondary/50 p-6 rounded-lg font-mono text-xs leading-relaxed overflow-y-auto max-h-[400px] border border-border/50 text-foreground">
+              {reportText}
+            </pre>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={handleCopyReport}
+              className="flex-1"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy to Clipboard
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleDownloadReport}
+              className="flex-1"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download .txt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
