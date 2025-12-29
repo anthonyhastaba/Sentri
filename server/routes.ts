@@ -6,11 +6,13 @@ import { z } from "zod";
 import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
-// Initialize OpenAI client using the environment variables from the integration
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+// Initialize OpenAI client only when API key is set (optional for local dev)
+const openai = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    })
+  : null;
 
 export async function registerRoutes(
   httpServer: Server,
@@ -90,6 +92,9 @@ export async function registerRoutes(
     if (!ticket) {
       return res.status(404).json({ message: "Ticket not found" });
     }
+    if (!openai) {
+      return res.status(503).json({ message: "AI analysis is not configured. Set OPENAI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY in .env." });
+    }
 
     try {
       const prompt = `
@@ -105,7 +110,7 @@ export async function registerRoutes(
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: "You are an expert IT security analyst and help desk specialist. Output valid JSON." },
           { role: "user", content: prompt }
@@ -137,13 +142,17 @@ export async function registerRoutes(
 
       res.json(updatedTicket);
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("AI Analysis failed:", error);
-      res.status(500).json({ message: "Failed to analyze ticket" });
+      const message = error instanceof Error ? error.message : "Failed to analyze ticket";
+      res.status(500).json({ message });
     }
   });
 
   app.post(api.tickets.bulkAnalyze.path, async (req, res) => {
+    if (!openai) {
+      return res.status(503).json({ message: "AI analysis is not configured. Set OPENAI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY in .env." });
+    }
     try {
       const { ids } = api.tickets.bulkAnalyze.input.parse(req.body);
       
@@ -166,7 +175,7 @@ export async function registerRoutes(
           `;
 
           const response = await openai.chat.completions.create({
-            model: "gpt-5.1",
+            model: "gpt-4o-mini",
             messages: [
               { role: "system", content: "You are an expert IT security analyst and help desk specialist. Output valid JSON." },
               { role: "user", content: prompt }

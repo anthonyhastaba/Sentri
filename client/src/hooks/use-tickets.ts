@@ -104,9 +104,11 @@ export function useAnalyzeTicket() {
     mutationFn: async (id: number) => {
       const url = buildUrl(api.tickets.analyze.path, { id });
       const res = await fetch(url, { method: api.tickets.analyze.method });
-      
-      if (!res.ok) throw new Error("Analysis failed");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = (data && typeof data.message === "string") ? data.message : "Analysis failed";
+        throw new Error(msg);
+      }
       return api.tickets.analyze.responses[200].parse(data);
     },
     onSuccess: (data) => {
@@ -114,8 +116,9 @@ export function useAnalyzeTicket() {
       queryClient.invalidateQueries({ queryKey: [api.tickets.get.path, data.id] });
       toast({ title: "Analysis Complete", description: "AI has categorized and prioritized the ticket." });
     },
-    onError: () => {
-      toast({ variant: "destructive", title: "Analysis Failed", description: "Could not complete AI analysis." });
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : "Could not complete AI analysis.";
+      toast({ variant: "destructive", title: "Analysis Failed", description: message });
     },
   });
 }
