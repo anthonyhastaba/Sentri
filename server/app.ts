@@ -21,6 +21,15 @@ export async function createApp(): Promise<express.Express> {
   const app = express();
   const _httpServer = createServer(app);
 
+  // Vercel can pass path without /api prefix; ensure Express sees /api/...
+  app.use((req, _res, next) => {
+    const url = req.url || "/";
+    if (!url.startsWith("/api")) {
+      (req as { url?: string }).url = "/api" + (url.startsWith("/") ? url : "/" + url);
+    }
+    next();
+  });
+
   app.use(
     express.json({
       verify: (req, _res, buf) => {

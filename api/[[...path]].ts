@@ -1,18 +1,8 @@
-import type { IncomingMessage, ServerResponse } from "http";
+/**
+ * Vercel serverless: export the Express app so Vercel invokes it with Node (req, res).
+ * Path normalization for /api is done in server/app.ts middleware.
+ */
 import { createApp } from "../server/app";
 
-let appPromise: ReturnType<typeof createApp> | null = null;
-
-/**
- * Vercel serverless handler: forwards all /api/* requests to the Express app.
- */
-export default async function handler(
-  req: IncomingMessage,
-  res: ServerResponse,
-) {
-  if (!appPromise) {
-    appPromise = createApp();
-  }
-  const app = await appPromise;
-  return app(req, res);
-}
+const app = await createApp();
+export default app;
