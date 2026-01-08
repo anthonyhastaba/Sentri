@@ -1,4 +1,4 @@
-import { tickets, type Ticket, type InsertTicket, type InternalInsertTicket } from "@shared/schema";
+import { tickets, type Ticket, type InsertTicket, type InternalInsertTicket } from "../shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
