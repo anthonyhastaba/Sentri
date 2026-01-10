@@ -14,8 +14,11 @@ export function useTickets() {
     queryKey: [api.tickets.list.path],
     queryFn: async () => {
       const res = await fetch(api.tickets.list.path);
-      if (!res.ok) throw new Error("Failed to fetch tickets");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = typeof data?.message === "string" ? data.message : "Failed to fetch tickets";
+        throw new Error(msg);
+      }
       return api.tickets.list.responses[200].parse(data);
     },
   });

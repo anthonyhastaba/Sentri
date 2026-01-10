@@ -1,0 +1,9 @@
+# Railway deployment config
+# Set DATABASE_URL and OPENAI_API_KEY in Railway project variables
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "npm start"

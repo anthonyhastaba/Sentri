@@ -15,20 +15,11 @@ export function log(message: string, source = "express") {
 
 /**
  * Creates the Express app with API routes and error handler (no static serving, no listen).
- * Used by server/index.ts for local/production server and by api/[[...path]].ts for Vercel.
+ * Used by server/index.ts for local and production (e.g. Railway).
  */
 export async function createApp(): Promise<express.Express> {
   const app = express();
   const _httpServer = createServer(app);
-
-  // Vercel can pass path without /api prefix; ensure Express sees /api/...
-  app.use((req, _res, next) => {
-    const url = req.url || "/";
-    if (!url.startsWith("/api")) {
-      (req as { url?: string }).url = "/api" + (url.startsWith("/") ? url : "/" + url);
-    }
-    next();
-  });
 
   app.use(
     express.json({

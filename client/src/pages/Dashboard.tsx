@@ -29,12 +29,13 @@ export default function Dashboard() {
   }
 
   if (error) {
+    const message = error instanceof Error ? error.message : "Please check your connection and try again.";
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background text-destructive">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 max-w-md px-4">
           <AlertCircle className="w-16 h-16 mx-auto" />
           <h2 className="text-2xl font-bold">Failed to load dashboard</h2>
-          <p className="text-muted-foreground">Please check your connection and try again.</p>
+          <p className="text-muted-foreground break-words">{message}</p>
         </div>
       </div>
     );
