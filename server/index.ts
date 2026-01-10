@@ -19,7 +19,6 @@ import { serveStatic } from "./static";
     {
       port,
       host: isProduction ? "0.0.0.0" : "127.0.0.1",
-      ...(isProduction && { reusePort: true }),
     },
     () => {
       log(`serving on port ${port}`);
