@@ -4,6 +4,8 @@ import { rm, readFile } from "fs/promises";
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
+// Packages to bundle (not external). Must include openai and its ESM deps (p-limit, p-retry)
+// so the CJS bundle doesn't require() ESM-only modules at runtime.
 const allowlist = [
   "@google/generative-ai",
   "axios",
@@ -21,6 +23,8 @@ const allowlist = [
   "nanoid",
   "nodemailer",
   "openai",
+  "p-limit",
+  "p-retry",
   "passport",
   "passport-local",
   "pg",
