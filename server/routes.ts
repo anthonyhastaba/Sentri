@@ -6,10 +6,10 @@ import { z } from "zod";
 import OpenAI from "openai";
 import { batchProcess } from "./replit_integrations/batch";
 
-// Initialize OpenAI client only when API key is set (optional for local dev)
-const openai = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY
+const openaiKey = (process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
+const openai = openaiKey
   ? new OpenAI({
-      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
+      apiKey: openaiKey,
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
     })
   : null;
