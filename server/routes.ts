@@ -13,6 +13,9 @@ const openai = openaiKey
       baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
     })
   : null;
+if (process.env.NODE_ENV === "production") {
+  console.log("[openai]", openai ? "API key configured" : "No API key (set OPENAI_API_KEY in Railway Variables)");
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -102,20 +105,24 @@ export async function registerRoutes(
         Title: ${ticket.title}
         Content: ${ticket.content}
 
-        Provide the following in JSON format:
+        Provide a comprehensive analysis in JSON format with the following fields:
         1. category (one of: Account Access, Malware/Security, Hardware, Network, Software, Other)
         2. priority (one of: Low, Medium, High, Critical)
-        3. nextSteps (bullet points of ITIL/Security best practices)
-        4. draftResponse (professional response to the user)
+        3. nextSteps (detailed, specific, actionable steps following ITIL and security best practices - provide 5-10 concrete steps)
+        4. draftResponse (thorough, professional, empathetic response to the user that addresses their issue and sets clear expectations)
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are an expert IT security analyst and help desk specialist. Output valid JSON." },
+          {
+            role: "system",
+            content: "You are an expert IT security analyst and help desk specialist with deep knowledge of ITIL frameworks, cybersecurity best practices, and incident response procedures. Your analysis must be thorough, specific, and actionable. For nextSteps, provide detailed technical steps that an IT team can follow immediately. For draftResponse, write a professional, empathetic, and clear communication that addresses the user's concern and sets appropriate expectations. Always output valid JSON."
+          },
           { role: "user", content: prompt }
         ],
         response_format: { type: "json_object" },
+        max_tokens: 2000,
       });
 
       const content = response.choices[0].message.content;
@@ -167,20 +174,24 @@ export async function registerRoutes(
             Title: ${ticket.title}
             Content: ${ticket.content}
 
-            Provide the following in JSON format:
+            Provide a comprehensive analysis in JSON format with the following fields:
             1. category (one of: Account Access, Malware/Security, Hardware, Network, Software, Other)
             2. priority (one of: Low, Medium, High, Critical)
-            3. nextSteps (bullet points of ITIL/Security best practices)
-            4. draftResponse (professional response to the user)
+            3. nextSteps (detailed, specific, actionable steps following ITIL and security best practices - provide 5-10 concrete steps)
+            4. draftResponse (thorough, professional, empathetic response to the user that addresses their issue and sets clear expectations)
           `;
 
           const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
-              { role: "system", content: "You are an expert IT security analyst and help desk specialist. Output valid JSON." },
+              {
+                role: "system",
+                content: "You are an expert IT security analyst and help desk specialist with deep knowledge of ITIL frameworks, cybersecurity best practices, and incident response procedures. Your analysis must be thorough, specific, and actionable. For nextSteps, provide detailed technical steps that an IT team can follow immediately. For draftResponse, write a professional, empathetic, and clear communication that addresses the user's concern and sets appropriate expectations. Always output valid JSON."
+              },
               { role: "user", content: prompt }
             ],
             response_format: { type: "json_object" },
+            max_tokens: 2000,
           });
 
           const content = response.choices[0].message.content;
