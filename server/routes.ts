@@ -17,6 +17,24 @@ if (process.env.NODE_ENV === "production") {
   console.log("[openai]", openai ? "API key configured" : "No API key (set OPENAI_API_KEY in Railway Variables)");
 }
 
+const TICKET_ANALYSIS_SYSTEM_PROMPT = `You are an expert IT security analyst and help desk specialist. Analyze each ticket and output valid JSON only.
+
+Output format: { "category": string, "priority": string, "nextSteps": string | string[], "draftResponse": string }
+
+- category: exactly one of: Account Access, Malware/Security, Hardware, Network, Software, Other
+- priority: exactly one of: Low, Medium, High, Critical
+- nextSteps: Provide 8–10 highly specific numbered steps tailored to the exact incident type. Reference enterprise tools and artifacts by name where relevant:
+  • Account lockouts / AD: ADUC (Active Directory Users and Computers), unlock in ADUC or via PowerShell, Event ID 4740 (account lockout) in Security logs
+  • Security / audit: Event ID 4740, Security event logs, SIEM if applicable
+  • Email / M365: Microsoft 365 Admin Center, Exchange Admin Center, Message Trace
+  • Hardware/software/network: Name specific tools (e.g. RMM, asset DB, network tools) as appropriate for the incident type
+  Each step must be actionable and reference concrete tools or procedures.
+- draftResponse: A professional, detailed draft reply that:
+  1. Addresses the user by name when a name can be inferred from the ticket content; otherwise use a professional generic greeting (e.g. "Hello,").
+  2. Explains exactly what IT will do (high-level steps and timeline where appropriate).
+  3. Asks 1–3 specific clarifying questions relevant to the incident type (e.g. last successful login, affected mailbox, exact error message).
+  4. Ends with a clear, professional sign-off (e.g. "Best regards," "IT Support," and ticket reference if applicable).`;
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -100,25 +118,22 @@ export async function registerRoutes(
     }
 
     try {
-      const prompt = `
-        Analyze the following IT support ticket:
-        Title: ${ticket.title}
-        Content: ${ticket.content}
+      const prompt = `Analyze this IT support ticket and return JSON only.
 
-        Provide a comprehensive analysis in JSON format with the following fields:
-        1. category (one of: Account Access, Malware/Security, Hardware, Network, Software, Other)
-        2. priority (one of: Low, Medium, High, Critical)
-        3. nextSteps (detailed, specific, actionable steps following ITIL and security best practices - provide 5-10 concrete steps)
-        4. draftResponse (thorough, professional, empathetic response to the user that addresses their issue and sets clear expectations)
-      `;
+Title: ${ticket.title}
+
+Content: ${ticket.content}
+
+Provide:
+1. category (one of: Account Access, Malware/Security, Hardware, Network, Software, Other)
+2. priority (one of: Low, Medium, High, Critical)
+3. nextSteps: 8–10 numbered, highly specific steps tailored to this incident type. Reference enterprise tools by name where relevant (e.g. ADUC, Event ID 4740, Microsoft 365 Admin Center, Exchange Admin Center).
+4. draftResponse: A professional draft that addresses the user by name when inferable from the content; explains exactly what IT will do; includes 1–3 specific clarifying questions for this incident type; and ends with a professional sign-off.`;
 
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content: "You are an expert IT security analyst and help desk specialist with deep knowledge of ITIL frameworks, cybersecurity best practices, and incident response procedures. Your analysis must be thorough, specific, and actionable. For nextSteps, provide detailed technical steps that an IT team can follow immediately. For draftResponse, write a professional, empathetic, and clear communication that addresses the user's concern and sets appropriate expectations. Always output valid JSON."
-          },
+          { role: "system", content: TICKET_ANALYSIS_SYSTEM_PROMPT },
           { role: "user", content: prompt }
         ],
         response_format: { type: "json_object" },
@@ -169,25 +184,22 @@ export async function registerRoutes(
           const ticket = await storage.getTicket(id);
           if (!ticket) return null;
 
-          const prompt = `
-            Analyze the following IT support ticket:
-            Title: ${ticket.title}
-            Content: ${ticket.content}
+          const prompt = `Analyze this IT support ticket and return JSON only.
 
-            Provide a comprehensive analysis in JSON format with the following fields:
-            1. category (one of: Account Access, Malware/Security, Hardware, Network, Software, Other)
-            2. priority (one of: Low, Medium, High, Critical)
-            3. nextSteps (detailed, specific, actionable steps following ITIL and security best practices - provide 5-10 concrete steps)
-            4. draftResponse (thorough, professional, empathetic response to the user that addresses their issue and sets clear expectations)
-          `;
+Title: ${ticket.title}
+
+Content: ${ticket.content}
+
+Provide:
+1. category (one of: Account Access, Malware/Security, Hardware, Network, Software, Other)
+2. priority (one of: Low, Medium, High, Critical)
+3. nextSteps: 8–10 numbered, highly specific steps tailored to this incident type. Reference enterprise tools by name where relevant (e.g. ADUC, Event ID 4740, Microsoft 365 Admin Center, Exchange Admin Center).
+4. draftResponse: A professional draft that addresses the user by name when inferable from the content; explains exactly what IT will do; includes 1–3 specific clarifying questions for this incident type; and ends with a professional sign-off.`;
 
           const response = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-              {
-                role: "system",
-                content: "You are an expert IT security analyst and help desk specialist with deep knowledge of ITIL frameworks, cybersecurity best practices, and incident response procedures. Your analysis must be thorough, specific, and actionable. For nextSteps, provide detailed technical steps that an IT team can follow immediately. For draftResponse, write a professional, empathetic, and clear communication that addresses the user's concern and sets appropriate expectations. Always output valid JSON."
-              },
+              { role: "system", content: TICKET_ANALYSIS_SYSTEM_PROMPT },
               { role: "user", content: prompt }
             ],
             response_format: { type: "json_object" },
