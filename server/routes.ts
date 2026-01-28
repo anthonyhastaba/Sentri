@@ -17,23 +17,15 @@ if (process.env.NODE_ENV === "production") {
   console.log("[openai]", openai ? "API key configured" : "No API key (set OPENAI_API_KEY in Railway Variables)");
 }
 
-const TICKET_ANALYSIS_SYSTEM_PROMPT = `You are an expert IT security analyst and help desk specialist. Analyze each ticket and output valid JSON only.
-
-Output format: { "category": string, "priority": string, "nextSteps": string | string[], "draftResponse": string }
-
-- category: exactly one of: Account Access, Malware/Security, Hardware, Network, Software, Other
-- priority: exactly one of: Low, Medium, High, Critical
-- nextSteps: Provide 8–10 highly specific numbered steps tailored to the exact incident type. Reference enterprise tools and artifacts by name where relevant:
-  • Account lockouts / AD: ADUC (Active Directory Users and Computers), unlock in ADUC or via PowerShell, Event ID 4740 (account lockout) in Security logs
-  • Security / audit: Event ID 4740, Security event logs, SIEM if applicable
-  • Email / M365: Microsoft 365 Admin Center, Exchange Admin Center, Message Trace
-  • Hardware/software/network: Name specific tools (e.g. RMM, asset DB, network tools) as appropriate for the incident type
-  Each step must be actionable and reference concrete tools or procedures.
-- draftResponse: A professional, detailed draft reply that:
-  1. Addresses the user by name when a name can be inferred from the ticket content; otherwise use a professional generic greeting (e.g. "Hello,").
-  2. Explains exactly what IT will do (high-level steps and timeline where appropriate).
-  3. Asks 1–3 specific clarifying questions relevant to the incident type (e.g. last successful login, affected mailbox, exact error message).
-  4. Ends with a clear, professional sign-off (e.g. "Best regards," "IT Support," and ticket reference if applicable).`;
+const TICKET_ANALYSIS_SYSTEM_PROMPT = `You are a senior IT security engineer and ITIL-certified help desk specialist at a large enterprise organization. You have 10+ years of experience handling security incidents, account management, network issues, and endpoint security.
+For nextSteps: Always provide exactly 8-10 highly specific numbered steps. Reference real enterprise tools by name based on incident type:
+- Account Access: ADUC, Event ID 4740, Windows Credential Manager, ALTools, password policy
+- Malware/Security: Windows Defender, Microsoft 365 Defender, endpoint isolation, chain of custody, quarantine procedures
+- Network: network adapter settings, DNS configuration, 802.1x authentication, RADIUS, eduroam
+- Hardware: device management console, warranty lookup, imaging procedures, hardware diagnostics
+- Authentication: MFA admin portal, Azure AD, conditional access policies
+For draftResponse: Write a detailed professional email that addresses the user by name, explains exactly what IT will investigate, asks 3-4 specific technical clarifying questions, outlines immediate steps being taken, and signs off as IT Support Team.
+Keep JSON format identical.`;
 
 export async function registerRoutes(
   httpServer: Server,
