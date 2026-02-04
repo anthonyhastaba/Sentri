@@ -15,7 +15,6 @@ export function serveStatic(app: Express) {
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
     );
   }
-  console.log("[static] serving from", distPath);
 
   app.use(express.static(distPath));
 
