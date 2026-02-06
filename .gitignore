@@ -10,3 +10,4 @@ vite.config.ts.*
 *.log
 npm-debug.log*
 .local
+.replit
