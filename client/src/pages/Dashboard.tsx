@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [isBulkAnalyzing, setIsBulkAnalyzing] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ count: number; totalTimeSaved: number } | null>(null);
   const [showReport, setShowReport] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   if (isLoading) {
@@ -43,18 +44,25 @@ export default function Dashboard() {
 
   const activeTickets = tickets?.filter(t => t.status !== 'resolved' && t.status !== 'closed') || [];
   const criticalCount = tickets?.filter(t => t.priority?.toLowerCase() === 'critical' && t.status !== 'resolved').length || 0;
-  
-  // For "Resolved Today", we filter by status 'resolved' and check if createdAt is today
+  const totalResolvedCount = tickets?.filter(t => t.status === 'resolved').length || 0;
+
+  const filteredTickets = (tickets || []).filter(t => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      t.title?.toLowerCase().includes(q) ||
+      t.category?.toLowerCase().includes(q) ||
+      t.content?.toLowerCase().includes(q)
+    );
+  });
+
+  // Keep isToday for generateReport usage
   const isToday = (date: Date) => {
     const today = new Date();
     return date.getDate() === today.getDate() &&
       date.getMonth() === today.getMonth() &&
       date.getFullYear() === today.getFullYear();
   };
-  
-  const resolvedTodayCount = tickets?.filter(t => 
-    t.status === 'resolved' && t.createdAt && isToday(new Date(t.createdAt))
-  ).length || 0;
 
   const toggleSelect = (id: number) => {
     setSelectedIds(prev => 
@@ -102,7 +110,7 @@ export default function Dashboard() {
 
     const today = new Date();
     const triagedToday = tickets.filter(t => t.createdAt && isToday(new Date(t.createdAt)));
-    const resolved = triagedToday.filter(t => t.status === 'resolved');
+    const resolved = tickets.filter(t => t.status === 'resolved');
     const active = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed');
     const critical = active.filter(t => t.priority?.toLowerCase() === 'critical');
     
@@ -182,7 +190,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background text-foreground flex">
       <Sidebar />
       
-      <main className="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto pt-14 md:pt-8">
         <header className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -219,11 +227,11 @@ export default function Dashboard() {
               color="text-red-500"
               borderColor="border-red-500/20"
             />
-            <MetricCard 
-              title="Resolved (Today)" 
-              value={resolvedTodayCount} 
+            <MetricCard
+              title="Total Resolved"
+              value={totalResolvedCount}
               icon={ShieldCheck}
-              trend="Target: 10+"
+              trend="All time"
               color="text-green-400"
             />
           </div>
@@ -298,12 +306,14 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               Recent Tickets
-              <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{tickets?.length}</span>
+              <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{filteredTickets.length}</span>
             </h2>
             <div className="relative w-64 hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input 
-                placeholder="Search tickets..." 
+              <input
+                placeholder="Search tickets..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-secondary/50 border border-border rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
@@ -333,7 +343,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {tickets?.map((ticket) => (
+                  {filteredTickets.map((ticket) => (
                     <motion.tr 
                       key={ticket.id}
                       initial={{ opacity: 0 }}
@@ -376,7 +386,7 @@ export default function Dashboard() {
                       </td>
                     </motion.tr>
                   ))}
-                  {tickets?.length === 0 && (
+                  {filteredTickets.length === 0 && (
                     <tr>
                       <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                         No tickets found. <Link href="/tickets/new" className="text-primary hover:underline">Create one</Link> to get started.

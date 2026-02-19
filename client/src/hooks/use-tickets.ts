@@ -1,13 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl } from "@shared/routes"; // Use the actual routes definition
+import { api, buildUrl } from "@shared/routes";
 import type { InsertTicket, Ticket } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-
-// Helper to handle Zod validation errors
-const handleValidationError = (error: unknown) => {
-  console.error("Validation error:", error);
-  // In a real app, you might parse the Zod error and show specific field errors
-};
 
 export function useTickets() {
   return useQuery({
@@ -78,7 +72,7 @@ export function useUpdateTicket() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number } & Partial<InsertTicket>) => {
+    mutationFn: async ({ id, ...updates }: { id: number } & Partial<Omit<Ticket, 'id' | 'createdAt'>>) => {
       const url = buildUrl(api.tickets.update.path, { id });
       // We send partial updates
       const res = await fetch(url, {

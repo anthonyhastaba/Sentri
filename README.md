@@ -6,6 +6,10 @@
 
 **[→ sentri.up.railway.app](https://sentri.up.railway.app)**
 
+## Screenshots
+
+<!-- Add a screenshot here, e.g.: ![Dashboard](./screenshots/dashboard.png) -->
+
 ## Key features
 
 - **Ticket management** — Create, view, update, and track tickets with status and priority

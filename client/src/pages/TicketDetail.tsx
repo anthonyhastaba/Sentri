@@ -7,6 +7,7 @@ import {
 import { Sidebar } from "@/components/Sidebar";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useLocation, useRoute, Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
   Loader2,
@@ -31,6 +32,7 @@ export default function TicketDetail() {
   const { mutate: analyze, isPending: isAnalyzing } = useAnalyzeTicket();
   const { mutate: update, isPending: isUpdating } = useUpdateTicket();
   const { mutate: remove, isPending: isDeleting } = useDeleteTicket();
+  const { toast } = useToast();
 
   const [draftResponse, setDraftResponse] = useState("");
 
@@ -55,15 +57,7 @@ export default function TicketDetail() {
   };
 
   const handleResolve = () => {
-    update(
-      { id, status: "resolved" },
-      {
-        onSuccess: () => {
-          // Option: stay on page or go back
-          // setLocation("/");
-        },
-      },
-    );
+    update({ id, status: "resolved" });
   };
 
   const handleSaveResponse = () => {
@@ -93,7 +87,7 @@ export default function TicketDetail() {
   return (
     <div className="min-h-screen bg-background text-foreground flex">
       <Sidebar />
-      <main className="flex-1 md:ml-64 p-4 md:p-8">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-14 md:pt-8">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Header Navigation */}
           <div className="flex items-center justify-between">
@@ -316,15 +310,12 @@ export default function TicketDetail() {
                   onChange={(e) => setDraftResponse(e.target.value)}
                 />
 
-                <div className="mt-4 pt-4 border-t border-border/50 flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    Markdown supported
-                  </span>
+                <div className="mt-4 pt-4 border-t border-border/50 flex justify-end items-center">
                   <button
                     className="bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs px-3 py-1.5 rounded transition-colors"
                     onClick={() => {
                       navigator.clipboard.writeText(draftResponse);
-                      // Could add a toast here
+                      toast({ title: "Copied", description: "Response copied to clipboard." });
                     }}
                   >
                     Copy to Clipboard

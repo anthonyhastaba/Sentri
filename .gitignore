@@ -11,3 +11,4 @@ vite.config.ts.*
 npm-debug.log*
 .local
 .replit
+CLAUDE.md
