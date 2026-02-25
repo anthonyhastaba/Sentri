@@ -9,6 +9,16 @@ import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { useLocation, useRoute, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Loader2,
   Sparkles,
@@ -35,6 +45,7 @@ export default function TicketDetail() {
   const { toast } = useToast();
 
   const [draftResponse, setDraftResponse] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Sync draft response when ticket loads or changes
   useEffect(() => {
@@ -51,9 +62,11 @@ export default function TicketDetail() {
   };
 
   const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this ticket?")) {
-      remove(id, { onSuccess: () => setLocation("/") });
-    }
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    remove(id, { onSuccess: () => setLocation("/") });
   };
 
   const handleResolve = () => {
@@ -305,7 +318,7 @@ export default function TicketDetail() {
 
                 <textarea
                   className="flex-1 w-full bg-secondary/30 border border-input rounded-md p-4 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground"
-                  placeholder="Generate a response first..."
+                  placeholder="Run AI analysis to generate a draft response, then edit it here..."
                   value={draftResponse || ""}
                   onChange={(e) => setDraftResponse(e.target.value)}
                 />
@@ -326,6 +339,26 @@ export default function TicketDetail() {
           </div>
         </div>
       </main>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the ticket and all associated data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

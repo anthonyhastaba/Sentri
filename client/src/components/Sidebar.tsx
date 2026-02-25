@@ -23,7 +23,7 @@ export function Sidebar() {
           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-[0.2em]">Security Operations</p>
         </div>
       </div>
-      <nav className="flex-1 p-4 space-y-1">
+      <nav aria-label="Main navigation" className="flex-1 p-4 space-y-1">
         <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Menu</p>
         {navItems.map((item) => {
           const isActive = location === item.href;
@@ -55,6 +55,7 @@ export function Sidebar() {
         </div>
         <button
           onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation menu"
           className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
         >
           <Menu className="w-5 h-5" />

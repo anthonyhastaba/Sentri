@@ -2,7 +2,7 @@ import { useTickets } from "@/hooks/use-tickets";
 import { Sidebar } from "@/components/Sidebar";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import { Link } from "wouter";
-import { Loader2, AlertCircle, ArrowRight, Search, Activity, ShieldCheck, Clock, CheckSquare, Square, Zap, CheckCircle2, FileText, Download, Copy, X } from "lucide-react";
+import { Loader2, AlertCircle, ArrowRight, Search, Activity, ShieldCheck, Clock, CheckSquare, Square, Zap, CheckCircle2, FileText, Download, Copy, X, type LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow, format } from "date-fns";
 import { useState } from "react";
@@ -121,7 +121,7 @@ export default function Dashboard() {
       return acc;
     }, {});
 
-    const calculateTimeSaved = (ticket: any) => {
+    const calculateTimeSaved = (ticket: { priority?: string | null; category?: string | null }) => {
       if (!ticket.priority) return 0;
       let base = 0;
       const p = ticket.priority.toLowerCase();
@@ -442,7 +442,16 @@ export default function Dashboard() {
   );
 }
 
-function MetricCard({ title, value, icon: Icon, trend, color, borderColor = "border-border/50" }: any) {
+interface MetricCardProps {
+  title: string;
+  value: number;
+  icon: LucideIcon;
+  trend: string;
+  color: string;
+  borderColor?: string;
+}
+
+function MetricCard({ title, value, icon: Icon, trend, color, borderColor = "border-border/50" }: MetricCardProps) {
   return (
     <div className={`glass-panel p-6 rounded-xl border ${borderColor} relative overflow-hidden group`}>
       <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity ${color}`}>

@@ -15,13 +15,20 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     closed: "bg-slate-500/10 text-slate-400 border-slate-500/20",
   };
 
+  const labels: Record<string, string> = {
+    new: "New",
+    in_progress: "In Progress",
+    resolved: "Resolved",
+    closed: "Closed",
+  };
+
   return (
     <span className={cn(
       "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border uppercase tracking-wide",
       variants[normalized] || variants.new,
       className
     )}>
-      {status.replace("_", " ")}
+      {labels[normalized] ?? status}
     </span>
   );
 }

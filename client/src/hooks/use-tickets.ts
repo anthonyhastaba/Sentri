@@ -74,7 +74,6 @@ export function useUpdateTicket() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: number } & Partial<Omit<Ticket, 'id' | 'createdAt'>>) => {
       const url = buildUrl(api.tickets.update.path, { id });
-      // We send partial updates
       const res = await fetch(url, {
         method: api.tickets.update.method,
         headers: { "Content-Type": "application/json" },

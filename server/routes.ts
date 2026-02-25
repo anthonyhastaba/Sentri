@@ -51,9 +51,6 @@ export async function registerRoutes(
       const input = api.tickets.create.input.parse(req.body);
       const ticket = await storage.createTicket(input);
       
-      // Auto-analyze immediately after creation if desired, or let client call analyze
-      // For now, we just return the created ticket
-      
       res.status(201).json(ticket);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -138,21 +135,17 @@ Provide:
       }
 
       const analysis = JSON.parse(content);
-      
-      // Update ticket with analysis results
+      const nextSteps = Array.isArray(analysis.nextSteps)
+        ? analysis.nextSteps.join('\n')
+        : analysis.nextSteps;
+
       const updatedTicket = await storage.updateTicket(id, {
         category: analysis.category,
         priority: analysis.priority,
-        nextSteps: analysis.nextSteps, // Ensure this handles array or string - storage expects string
+        nextSteps,
         draftResponse: analysis.draftResponse,
-        status: "in_progress" // Auto-update status to in_progress
+        status: "in_progress",
       });
-
-      // If nextSteps is an array, join it
-      if (Array.isArray(analysis.nextSteps)) {
-         await storage.updateTicket(id, { nextSteps: analysis.nextSteps.join('\n') });
-         updatedTicket.nextSteps = analysis.nextSteps.join('\n');
-      }
 
       res.json(updatedTicket);
 
