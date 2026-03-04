@@ -40,7 +40,7 @@
 
 1. **Clone and install**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/anthonyhastaba/Sentri.git
    cd Incident-Triage-Hub
    npm install
    ```
