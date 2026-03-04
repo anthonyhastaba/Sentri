@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { api } from "../shared/routes";
 import { z } from "zod";
 import OpenAI from "openai";
-import { batchProcess } from "./replit_integrations/batch";
+import { batchProcess } from "./lib/batch";
 
 const openaiKey = (process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "").trim();
 const openai = openaiKey

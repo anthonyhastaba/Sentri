@@ -63,7 +63,7 @@ createdAt
 
 `POST /api/tickets/:id/analyze` → sends title + content to gpt-4o → returns `category`, `priority`, `nextSteps` (8–10 numbered steps), and `draftResponse` (email draft) → stored back to the ticket row.
 
-Bulk analysis (`POST /api/tickets/bulk-analyze`) uses `batchProcess()` in `server/replit_integrations/batch/utils.ts` with `concurrency=3` and exponential backoff on rate-limit errors (p-limit + p-retry).
+Bulk analysis (`POST /api/tickets/bulk-analyze`) uses `batchProcess()` in `server/lib/batch/utils.ts` with `concurrency=3` and exponential backoff on rate-limit errors (p-limit + p-retry).
 
 ## Build strategy
 

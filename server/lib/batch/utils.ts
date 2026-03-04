@@ -10,7 +10,7 @@ import pRetry from "p-retry";
  *
  * USAGE:
  * ```typescript
- * import { batchProcess, isRateLimitError } from "./replit_integrations/batch";
+ * import { batchProcess, isRateLimitError } from "./lib/batch";
  *
  * const results = await batchProcess(
  *   artworks,
@@ -179,4 +179,3 @@ export async function batchProcessWithSSE<T, R>(
   sendEvent({ type: "complete", processed: items.length, errors });
   return results;
 }
-
