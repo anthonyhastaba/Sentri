@@ -388,7 +388,7 @@ export default function Dashboard() {
                   ))}
                   {filteredTickets.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                      <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground">
                         No tickets found. <Link href="/tickets/new" className="text-primary hover:underline">Create one</Link> to get started.
                       </td>
                     </tr>
