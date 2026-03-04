@@ -8,7 +8,7 @@
 
 ## Screenshots
 
-<!-- Add a screenshot here, e.g.: ![Dashboard](./screenshots/dashboard.png) -->
+![Sentri Dashboard](./screenshots/dashboard.png)
 
 ## Key features
 
