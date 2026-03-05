@@ -1,4 +1,4 @@
-# Sentri — Incident Triage Hub
+# Sentri
 
 **Sentri** is an AI-powered operations automation tool that eliminates manual ticket triage. Submit an incident and GPT-4o instantly classifies it, sets priority, generates enterprise-grade next steps tied to real tools (ADUC, Event ID 4740, M365 Admin Center), and drafts a professional response — turning hours of manual ops work into seconds.
 
