@@ -1,6 +1,6 @@
 # Sentri — Incident Triage Hub
 
-**Sentri** is a security and IT incident triage dashboard for enterprise teams. Create support tickets, get AI-powered categorization and priority, actionable next steps tied to real tools (ADUC, Event ID 4740, M365 Admin, etc.), and professional draft responses—all in one place.
+**Sentri** is an AI-powered operations automation tool that eliminates manual ticket triage. Submit an incident and GPT-4o instantly classifies it, sets priority, generates enterprise-grade next steps tied to real tools (ADUC, Event ID 4740, M365 Admin Center), and drafts a professional response — turning hours of manual ops work into seconds.
 
 ## Live demo
 
@@ -16,6 +16,7 @@
 - **AI-powered analysis** — Automatic category, priority, 8–10 numbered next steps, and a draft response per ticket (OpenAI)
 - **Tool-specific guidance** — Next steps reference real enterprise tools by incident type (e.g. ADUC, Event ID 4740, Microsoft 365 Admin Center, Exchange Admin Center)
 - **Bulk analysis** — Analyze multiple tickets at once with configurable concurrency
+- **Impact tracking** — Bulk analysis reports estimated time saved per ticket (6–21 min depending on category and priority), giving a concrete ROI signal for each automation run
 - **Professional drafts** — Model-generated replies that address the user by name, explain IT actions, ask clarifying questions, and sign off as IT Support Team
 - **Dashboard** — Overview of active tickets, critical count, resolved today, and quick actions
 
@@ -73,6 +74,15 @@
 | `PORT`             | No       | Server port (default 5000) |
 
 For production (e.g. Railway), set these in your host’s environment or Variables UI.
+
+## Testing
+
+31 tests covering storage-layer contract tests and HTTP integration tests (Vitest + supertest).
+
+```bash
+npm run test          # run once
+npm run test:watch    # watch mode
+```
 
 ## License
 
