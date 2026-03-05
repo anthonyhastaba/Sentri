@@ -2,8 +2,13 @@ import { tickets, type Ticket, type InsertTicket, type InternalInsertTicket } fr
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
+export interface PaginateOptions {
+  limit?: number;
+  offset?: number;
+}
+
 export interface IStorage {
-  getTickets(): Promise<Ticket[]>;
+  getTickets(opts?: PaginateOptions): Promise<Ticket[]>;
   getTicket(id: number): Promise<Ticket | undefined>;
   createTicket(ticket: InsertTicket | InternalInsertTicket): Promise<Ticket>;
   updateTicket(id: number, updates: Partial<InternalInsertTicket>): Promise<Ticket>;
@@ -11,8 +16,18 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getTickets(): Promise<Ticket[]> {
-    return await db.select().from(tickets).orderBy(tickets.createdAt);
+  async getTickets(opts?: PaginateOptions): Promise<Ticket[]> {
+    const base = db.select().from(tickets).orderBy(tickets.createdAt);
+    if (opts?.limit !== undefined && opts?.offset !== undefined) {
+      return await base.limit(opts.limit).offset(opts.offset);
+    }
+    if (opts?.limit !== undefined) {
+      return await base.limit(opts.limit);
+    }
+    if (opts?.offset !== undefined) {
+      return await base.offset(opts.offset);
+    }
+    return await base;
   }
 
   async getTicket(id: number): Promise<Ticket | undefined> {

@@ -33,7 +33,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   app.get(api.tickets.list.path, async (req, res) => {
-    const tickets = await storage.getTickets();
+    const limit = req.query.limit !== undefined ? Number(req.query.limit) : undefined;
+    const offset = req.query.offset !== undefined ? Number(req.query.offset) : undefined;
+    const tickets = await storage.getTickets({ limit, offset });
     res.json(tickets);
   });
 
