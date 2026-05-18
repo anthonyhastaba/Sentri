@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import { clerkMiddleware, getAuth } from "@clerk/express";
 import { createServer } from "http";
 import { registerRoutes } from "./routes";
 
@@ -17,9 +18,17 @@ export function log(message: string, source = "express") {
  * Creates the Express app with API routes and error handler (no static serving, no listen).
  * Used by server/index.ts for local and production (e.g. Railway).
  */
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+  next();
+}
+
 export async function createApp(): Promise<express.Express> {
   const app = express();
   const _httpServer = createServer(app);
+
+  app.use(clerkMiddleware());
 
   app.use(
     express.json({
@@ -62,7 +71,7 @@ export async function createApp(): Promise<express.Express> {
       ?? (err as { status?: number; statusCode?: number }).statusCode
       ?? 500;
     const message = (err as Error).message ?? "Internal Server Error";
-    console.error("Internal Server Error:", err);
+    console.error("Internal Server Error:", err instanceof Error ? err.message : String(err));
     if (res.headersSent) return next(err);
     return res.status(status).json({ message });
   });

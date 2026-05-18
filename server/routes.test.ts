@@ -9,8 +9,18 @@ vi.mock("dotenv/config", () => ({}));
 // Prevent server/db.ts from throwing due to missing DATABASE_URL
 vi.mock("./db", () => ({ pool: {}, db: {} }));
 
+// Stub Clerk so tests run without real credentials.
+// - clerkMiddleware: passthrough (no auth context needed for the middleware layer)
+// - getAuth: returns a deterministic userId
+vi.mock("@clerk/express", () => ({
+  clerkMiddleware: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+  getAuth: () => ({ userId: "test-user-id" }),
+}));
+
 const mockTicket: Ticket = {
   id: 1,
+  ticketNumber: 1,
+  userId: "test-user-id",
   title: "Active Directory Account Lockout",
   content: "User jdoe cannot log in — account is locked.",
   category: null,
@@ -81,12 +91,12 @@ describe("Tickets API", () => {
     it("forwards limit and offset query params to storage", async () => {
       mockStorage.getTickets.mockResolvedValue([]);
       await request(app).get("/api/tickets?limit=5&offset=10");
-      expect(mockStorage.getTickets).toHaveBeenCalledWith({ limit: 5, offset: 10 });
+      expect(mockStorage.getTickets).toHaveBeenCalledWith("test-user-id", { limit: 5, offset: 10 });
     });
 
     it("passes undefined when no pagination params are given", async () => {
       await request(app).get("/api/tickets");
-      expect(mockStorage.getTickets).toHaveBeenCalledWith({
+      expect(mockStorage.getTickets).toHaveBeenCalledWith("test-user-id", {
         limit: undefined,
         offset: undefined,
       });
@@ -164,7 +174,7 @@ describe("Tickets API", () => {
     it("returns 204 on success", async () => {
       const res = await request(app).delete("/api/tickets/1");
       expect(res.status).toBe(204);
-      expect(mockStorage.deleteTicket).toHaveBeenCalledWith(1);
+      expect(mockStorage.deleteTicket).toHaveBeenCalledWith(1, "test-user-id");
     });
 
     it("returns 404 when the ticket does not exist", async () => {
@@ -184,8 +194,11 @@ describe("Tickets API", () => {
     });
 
     it("returns 503 when the OpenAI key is not configured", async () => {
-      // In the test environment OPENAI_API_KEY is not set, so openai = null
-      const res = await request(app).post("/api/tickets/1/analyze");
+      // In the test environment OPENAI_API_KEY is not set, so openai = null.
+      // accessKey must pass the guard to reach the openai null-check.
+      const res = await request(app)
+        .post("/api/tickets/1/analyze")
+        .send({ accessKey: "DEMO123" });
       expect(res.status).toBe(503);
       expect(res.body.message).toMatch(/not configured/i);
     });
@@ -197,16 +210,17 @@ describe("Tickets API", () => {
     it("returns 503 when the OpenAI key is not configured", async () => {
       const res = await request(app)
         .post("/api/tickets/bulk-analyze")
-        .send({ ids: [1, 2] });
+        .send({ ids: [1, 2], accessKey: "DEMO123" });
       expect(res.status).toBe(503);
     });
 
     it("returns 503 for all requests when the OpenAI key is not configured", async () => {
-      // The openai null-check in the route fires before Zod validation, so even
-      // an invalid body receives 503 (not 400) when no key is present.
+      // The openai null-check fires before Zod validation, so even an invalid
+      // body receives 503 (not 400) when no OpenAI key is present.
+      // accessKey must pass its own guard to reach the openai null-check.
       const res = await request(app)
         .post("/api/tickets/bulk-analyze")
-        .send({ ids: "not-an-array" });
+        .send({ ids: "not-an-array", accessKey: "DEMO123" });
       expect(res.status).toBe(503);
     });
   });

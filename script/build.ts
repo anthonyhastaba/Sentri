@@ -7,6 +7,7 @@ import { rm, readFile } from "fs/promises";
 // Packages to bundle (not external). Must include openai and its ESM deps (p-limit, p-retry)
 // so the CJS bundle doesn't require() ESM-only modules at runtime.
 const allowlist = [
+  "@clerk/express",
   "@google/generative-ai",
   "axios",
   "connect-pg-simple",

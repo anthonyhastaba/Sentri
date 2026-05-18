@@ -9,6 +9,7 @@ import type { InsertTicket, InternalInsertTicket, Ticket } from "../shared/schem
 class MockStorage implements IStorage {
   private store: Ticket[] = [];
   private nextId = 1;
+  private nextTicketNumber = 1;
 
   async getTickets(opts?: { limit?: number; offset?: number }): Promise<Ticket[]> {
     let result = [...this.store];
@@ -25,6 +26,7 @@ class MockStorage implements IStorage {
     const now = new Date();
     const newTicket: Ticket = {
       id: this.nextId++,
+      ticketNumber: this.nextTicketNumber++,
       title: ticket.title,
       content: ticket.content,
       category: null,

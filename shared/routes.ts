@@ -34,7 +34,9 @@ export const api = {
     create: {
       method: 'POST' as const,
       path: '/api/tickets' as const,
-      input: insertTicketSchema,
+      input: insertTicketSchema.omit({ userId: true }).extend({
+        priority: z.string().optional(),
+      }),
       responses: {
         201: z.custom<typeof tickets.$inferSelect>(),
         400: errorSchemas.validation,
@@ -43,7 +45,7 @@ export const api = {
     update: {
       method: 'PUT' as const,
       path: '/api/tickets/:id' as const,
-      input: insertTicketSchema.partial().extend({
+      input: insertTicketSchema.omit({ userId: true }).partial().extend({
         category: z.string().optional(),
         priority: z.string().optional(),
         status: z.string().optional(),
@@ -55,6 +57,11 @@ export const api = {
         400: errorSchemas.validation,
         404: errorSchemas.notFound,
       },
+    },
+    deleteAll: {
+      method: 'DELETE' as const,
+      path: '/api/tickets/all' as const,
+      responses: { 204: z.void() },
     },
     delete: {
       method: 'DELETE' as const,

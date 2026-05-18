@@ -1,13 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@clerk/clerk-react";
 import { api, buildUrl } from "@shared/routes";
 import type { InsertTicket, Ticket } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 export function useTickets() {
+  const { getToken } = useAuth();
   return useQuery({
     queryKey: [api.tickets.list.path],
     queryFn: async () => {
-      const res = await fetch(api.tickets.list.path);
+      const token = await getToken();
+      const res = await fetch(api.tickets.list.path, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const msg = typeof data?.message === "string" ? data.message : "Failed to fetch tickets";
@@ -19,11 +24,15 @@ export function useTickets() {
 }
 
 export function useTicket(id: number) {
+  const { getToken } = useAuth();
   return useQuery({
     queryKey: [api.tickets.get.path, id],
     queryFn: async () => {
+      const token = await getToken();
       const url = buildUrl(api.tickets.get.path, { id });
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to fetch ticket");
       const data = await res.json();
@@ -35,17 +44,19 @@ export function useTicket(id: number) {
 
 export function useCreateTicket() {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (newTicket: InsertTicket) => {
+      const token = await getToken();
       const validated = api.tickets.create.input.parse(newTicket);
       const res = await fetch(api.tickets.create.path, {
         method: api.tickets.create.method,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(validated),
       });
-      
+
       if (!res.ok) {
         if (res.status === 400) {
           const error = await res.json();
@@ -53,7 +64,7 @@ export function useCreateTicket() {
         }
         throw new Error("Failed to create ticket");
       }
-      
+
       const data = await res.json();
       return api.tickets.create.responses[201].parse(data);
     },
@@ -69,14 +80,16 @@ export function useCreateTicket() {
 
 export function useUpdateTicket() {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: number } & Partial<Omit<Ticket, 'id' | 'createdAt'>>) => {
+      const token = await getToken();
       const url = buildUrl(api.tickets.update.path, { id });
       const res = await fetch(url, {
         method: api.tickets.update.method,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(updates),
       });
 
@@ -94,12 +107,18 @@ export function useUpdateTicket() {
 
 export function useAnalyzeTicket() {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async ({ id, accessKey }: { id: number; accessKey: string }) => {
+      const token = await getToken();
       const url = buildUrl(api.tickets.analyze.path, { id });
-      const res = await fetch(url, { method: api.tickets.analyze.method });
+      const res = await fetch(url, {
+        method: api.tickets.analyze.method,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ accessKey }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const msg = (data && typeof data.message === "string") ? data.message : "Analysis failed";
@@ -121,12 +140,17 @@ export function useAnalyzeTicket() {
 
 export function useDeleteTicket() {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: number) => {
+      const token = await getToken();
       const url = buildUrl(api.tickets.delete.path, { id });
-      const res = await fetch(url, { method: api.tickets.delete.method });
+      const res = await fetch(url, {
+        method: api.tickets.delete.method,
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to delete ticket");
     },
     onSuccess: () => {
