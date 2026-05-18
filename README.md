@@ -4,11 +4,9 @@
 
 ## Live demo
 
-Sentri is live on Railway:
+**[→ sentri.up.railway.app](https://sentri.up.railway.app)**
 
-- **App**: https://sentri.up.railway.app
-
-## Screenshot
+## Screenshots
 
 ![Sentri Dashboard](./screenshots/dashboard.png)
 
