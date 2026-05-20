@@ -67,11 +67,14 @@
 
 ### Environment variables
 
-| Variable           | Required | Description |
-|--------------------|----------|-------------|
-| `DATABASE_URL`     | Yes      | PostgreSQL connection string |
-| `OPENAI_API_KEY`   | No       | Enables AI ticket analysis; app runs without it |
-| `PORT`             | No       | Server port (default 5000) |
+| Variable                      | Required | Description |
+|-------------------------------|----------|-------------|
+| `DATABASE_URL`                | Yes      | PostgreSQL connection string |
+| `VITE_CLERK_PUBLISHABLE_KEY`  | Yes      | Clerk publishable key (frontend; set before `npm run build` on Railway) |
+| `CLERK_PUBLISHABLE_KEY`       | Yes      | Same publishable key for `@clerk/express` on the server |
+| `CLERK_SECRET_KEY`            | Yes      | Clerk secret key (server only) |
+| `OPENAI_API_KEY`              | No       | Enables AI ticket analysis; app runs without it |
+| `PORT`                        | No       | Server port (default 5000) |
 
 For production (e.g. Railway), set these in your host’s environment or Variables UI.
 
