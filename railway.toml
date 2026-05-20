@@ -1,5 +1,6 @@
 # Railway deployment config
-# Set DATABASE_URL and OPENAI_API_KEY in Railway project variables
+# Required: DATABASE_URL, CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY
+# Optional: OPENAI_API_KEY, VITE_CLERK_PUBLISHABLE_KEY (runtime inject uses CLERK_PUBLISHABLE_KEY)
 
 [build]
 builder = "nixpacks"
